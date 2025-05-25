@@ -1,0 +1,36 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+  <title>Finance Manager</title>
+</head>
+<body>
+  <div class="container">
+    <h1>Finance Manager</h1>
+    <div class="summary">
+      <div>
+        <h2>Income</h2>
+        <p id="income">₹0.00</p>
+      </div>
+      <div>
+        <h2>Expense</h2>
+        <p id="expense">₹0.00</p>
+      </div>
+    </div>
+
+    <ul id="transaction-list"></ul>
+
+    <form id="transaction-form">
+      <input type="text" id="description" placeholder="Description" required />
+      <input type="number" id="amount" placeholder="Amount" required />
+      <button type="submit">Add Transaction</button>
+    </form>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
