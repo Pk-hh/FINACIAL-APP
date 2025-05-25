@@ -9,7 +9,6 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
 
-  /* Reset & basics */
   * {
     box-sizing: border-box;
   }
@@ -52,7 +51,6 @@
     box-shadow: none;
   }
 
-  /* Inputs */
   input, select, textarea {
     font-family: 'Inter', sans-serif;
     padding: 10px;
@@ -61,17 +59,16 @@
     outline-offset: 2px;
     outline-color: transparent;
     font-size: 1rem;
-    transition: border-color 0.3s ease;
     width: 100%;
     max-width: 320px;
     margin-bottom: 15px;
+    transition: border-color 0.3s ease;
   }
   input:focus, select:focus, textarea:focus {
     border-color: #4caf50;
     outline-color: #4caf50;
   }
 
-  /* Containers */
   .container {
     width: 100%;
     max-width: 900px;
@@ -91,7 +88,6 @@
     flex: 1 1 200px;
   }
 
-  /* List styles */
   ul {
     list-style: none;
     padding-left: 0;
@@ -121,12 +117,10 @@
     box-shadow: 0 5px 12px rgb(192 57 43 / 0.7);
   }
 
-  /* Chart container */
   #chart-container {
     margin-top: 30px;
   }
 
-  /* Dark mode */
   body.dark {
     background-color: #121212;
     color: #ddd;
@@ -158,7 +152,6 @@
     background-color: #c0392b;
   }
 
-  /* Responsive */
   @media (max-width: 600px) {
     form {
       flex-direction: column;
@@ -172,7 +165,6 @@
     }
   }
 
-  /* Toggle dark mode label */
   label[for="darkModeToggle"] {
     cursor: pointer;
     display: inline-flex;
@@ -259,49 +251,388 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// Your original JS code here (same as before)...
+(() => {
+  // Elements
+  const authSection = document.getElementById('auth-section');
+  const mainSection = document.getElementById('main-section');
+  const authForm = document.getElementById('authForm');
+  const usernameInput = document.getElementById('usernameInput');
+  const passwordInput = document.getElementById('passwordInput');
+  const authSubmitBtn = document.getElementById('authSubmitBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const currentUserSpan = document.getElementById('currentUser');
 
-// For brevity, I won't repeat it here, just use your full existing JS from before.
+  const categoryForm = document.getElementById('categoryForm');
+  const categoryNameInput = document.getElementById('categoryNameInput');
+  const categoryList = document.getElementById('categoryList');
 
-// Make sure to add dark mode toggle logic:
+  const transactionForm = document.getElementById('transactionForm');
+  const descInput = document.getElementById('descInput');
+  const amountInput = document.getElementById('amountInput');
+  const categorySelect = document.getElementById('categorySelect');
+  const dateInput = document.getElementById('dateInput');
+  const transactionList = document.getElementById('transactionList');
 
-(function(){
+  const totalIncomeSpan = document.getElementById('totalIncome');
+  const totalExpenseSpan = document.getElementById('totalExpense');
+
+  const reminderForm = document.getElementById('reminderForm');
+  const reminderTextInput = document.getElementById('reminderTextInput');
+  const reminderDateInput = document.getElementById('reminderDateInput');
+  const remindersList = document.getElementById('remindersList');
+
+  const exportCsvBtn = document.getElementById('exportCsvBtn');
+  const backupJsonBtn = document.getElementById('backupJsonBtn');
+  const restoreJsonBtn = document.getElementById('restoreJsonBtn');
+  const backupArea = document.getElementById('backupArea');
+
   const darkModeToggle = document.getElementById('darkModeToggle');
 
-  // Dark mode toggle function
-  function applyDarkMode(isDark) {
-    document.body.classList.toggle('dark', isDark);
-    localStorage.setItem('pfm_darkMode', isDark ? '1' : '0');
+  // Data keys
+  const USERS_KEY = 'pfm_users';
+  const LOGGED_USER_KEY = 'pfm_loggedUser';
+
+  let currentUser = null;
+  let users = {};
+
+  // Load users from localStorage
+  function loadUsers() {
+    users = JSON.parse(localStorage.getItem(USERS_KEY) || '{}');
   }
 
-  darkModeToggle.addEventListener('change', e => {
-    applyDarkMode(e.target.checked);
+  // Save users to localStorage
+  function saveUsers() {
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  }
+
+  // Login/Register handler
+  authForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value.trim();
+    if (!username || !password) return alert('Enter username and password');
+    loadUsers();
+    if (users[username]) {
+      // User exists: check password
+      if (users[username].password !== password) {
+        alert('Incorrect password');
+        return;
+      }
+    } else {
+      // Register new user
+      users[username] = {
+        password,
+        categories: ['General'],
+        transactions: [],
+        reminders: []
+      };
+      saveUsers();
+      alert('User registered! You are now logged in.');
+    }
+    currentUser = username;
+    localStorage.setItem(LOGGED_USER_KEY, currentUser);
+    initApp();
   });
 
-  // Init dark mode state from localStorage
-  const savedDarkMode = localStorage.getItem('pfm_darkMode');
-  if(savedDarkMode === '1') {
-    darkModeToggle.checked = true;
-    applyDarkMode(true);
+  // Logout
+  logoutBtn.addEventListener('click', () => {
+    currentUser = null;
+    localStorage.removeItem(LOGGED_USER_KEY);
+    mainSection.style.display = 'none';
+    authSection.style.display = 'block';
+  });
+
+  // Init app after login
+  function initApp() {
+    loadUsers();
+    if (!currentUser || !users[currentUser]) {
+      authSection.style.display = 'block';
+      mainSection.style.display = 'none';
+      return;
+    }
+    authSection.style.display = 'none';
+    mainSection.style.display = 'block';
+    currentUserSpan.textContent = currentUser;
+    renderCategories();
+    renderTransactions();
+    renderReminders();
+    updateSummary();
+    updateCategorySelect();
+    renderChart();
   }
 
-  // *** Insert your entire previous JS code here ***
-  // (User auth, categories, transactions, reminders, charts, etc.)
+  // Categories
+  categoryForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const catName = categoryNameInput.value.trim();
+    if (!catName) return;
+    if (users[currentUser].categories.includes(catName)) {
+      alert('Category already exists');
+      return;
+    }
+    users[currentUser].categories.push(catName);
+    saveUsers();
+    categoryNameInput.value = '';
+    renderCategories();
+    updateCategorySelect();
+  });
+
+  function renderCategories() {
+    categoryList.innerHTML = '';
+    users[currentUser].categories.forEach(cat => {
+      const li = document.createElement('li');
+      li.textContent = cat;
+      const btn = document.createElement('button');
+      btn.textContent = 'Delete';
+      btn.onclick = () => {
+        if (!confirm(`Delete category "${cat}"? All transactions in this category will also be deleted.`)) return;
+        users[currentUser].categories = users[currentUser].categories.filter(c => c !== cat);
+        // Also delete transactions in this category
+        users[currentUser].transactions = users[currentUser].transactions.filter(t => t.category !== cat);
+        saveUsers();
+        renderCategories();
+        renderTransactions();
+        updateSummary();
+        updateCategorySelect();
+        renderChart();
+      };
+      li.appendChild(btn);
+      categoryList.appendChild(li);
+    });
+  }
+
+  // Transactions
+  transactionForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const desc = descInput.value.trim();
+    const amount = parseFloat(amountInput.value);
+    const category = categorySelect.value;
+    const date = dateInput.value;
+    if (!desc || !category || !date || isNaN(amount)) return alert('Please fill all transaction fields correctly');
+    users[currentUser].transactions.push({
+      id: crypto.randomUUID(),
+      description: desc,
+      amount,
+      category,
+      date
+    });
+    saveUsers();
+    descInput.value = '';
+    amountInput.value = '';
+    dateInput.value = '';
+    renderTransactions();
+    updateSummary();
+    renderChart();
+  });
+
+  function renderTransactions() {
+    transactionList.innerHTML = '';
+    users[currentUser].transactions
+      .sort((a,b) => new Date(b.date) - new Date(a.date))
+      .forEach(t => {
+      const li = document.createElement('li');
+      const sign = t.amount >= 0 ? '+' : '-';
+      const amountText = `${sign}$${Math.abs(t.amount).toFixed(2)}`;
+      li.innerHTML = `<strong>${t.description}</strong> <em>${t.category}</em> <span>${t.date}</span> <span>${amountText}</span>`;
+      const btn = document.createElement('button');
+      btn.textContent = 'Delete';
+      btn.onclick = () => {
+        if (!confirm('Delete this transaction?')) return;
+        users[currentUser].transactions = users[currentUser].transactions.filter(tr => tr.id !== t.id);
+        saveUsers();
+        renderTransactions();
+        updateSummary();
+        renderChart();
+      };
+      li.appendChild(btn);
+      transactionList.appendChild(li);
+    });
+  }
+
+  // Update categories select
+  function updateCategorySelect() {
+    categorySelect.innerHTML = '';
+    users[currentUser].categories.forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat;
+      opt.textContent = cat;
+      categorySelect.appendChild(opt);
+    });
+  }
+
+  // Summary
+  function updateSummary() {
+    const transactions = users[currentUser].transactions;
+    let income = 0, expense = 0;
+    transactions.forEach(t => {
+      if (t.amount >= 0) income += t.amount;
+      else expense += Math.abs(t.amount);
+    });
+    totalIncomeSpan.textContent = `$${income.toFixed(2)}`;
+    totalExpenseSpan.textContent = `$${expense.toFixed(2)}`;
+  }
+
+  // Chart (Monthly income vs expense)
+  let chartInstance = null;
+  function renderChart() {
+    if (!chartInstance) {
+      const ctx = document.getElementById('monthlyChart').getContext('2d');
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: [], datasets: []
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { beginAtZero: true }
+          },
+          plugins: {
+            legend: { position: 'top' },
+            title: {
+              display: true,
+              text: 'Monthly Income and Expense'
+            }
+          }
+        }
+      });
+    }
+    // Aggregate data monthly
+    const dataByMonth = {};
+    users[currentUser].transactions.forEach(t => {
+      const d = new Date(t.date);
+      if (isNaN(d)) return;
+      const key = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}`;
+      if (!dataByMonth[key]) dataByMonth[key] = { income:0, expense:0 };
+      if (t.amount >= 0) dataByMonth[key].income += t.amount;
+      else dataByMonth[key].expense += Math.abs(t.amount);
+    });
+    const sortedKeys = Object.keys(dataByMonth).sort();
+    const labels = sortedKeys;
+    const incomeData = sortedKeys.map(k => dataByMonth[k].income.toFixed(2));
+    const expenseData = sortedKeys.map(k => dataByMonth[k].expense.toFixed(2));
+
+    chartInstance.data.labels = labels;
+    chartInstance.data.datasets = [
+      { label: 'Income', data: incomeData, backgroundColor: '#4caf50' },
+      { label: 'Expense', data: expenseData, backgroundColor: '#f44336' }
+    ];
+    chartInstance.update();
+  }
+
+  // Reminders
+  reminderForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const text = reminderTextInput.value.trim();
+    const datetime = reminderDateInput.value;
+    if (!text || !datetime) return alert('Fill reminder text and date/time');
+    users[currentUser].reminders.push({
+      id: crypto.randomUUID(),
+      text,
+      datetime
+    });
+    saveUsers();
+    reminderTextInput.value = '';
+    reminderDateInput.value = '';
+    renderReminders();
+  });
+
+  function renderReminders() {
+    remindersList.innerHTML = '';
+    users[currentUser].reminders
+      .sort((a,b) => new Date(a.datetime) - new Date(b.datetime))
+      .forEach(r => {
+      const li = document.createElement('li');
+      li.textContent = `${r.text} - ${new Date(r.datetime).toLocaleString()}`;
+      const btn = document.createElement('button');
+      btn.textContent = 'Delete';
+      btn.onclick = () => {
+        if (!confirm('Delete this reminder?')) return;
+        users[currentUser].reminders = users[currentUser].reminders.filter(rem => rem.id !== r.id);
+        saveUsers();
+        renderReminders();
+      };
+      li.appendChild(btn);
+      remindersList.appendChild(li);
+    });
+  }
+
+  // Export CSV of transactions
+  exportCsvBtn.addEventListener('click', () => {
+    const transactions = users[currentUser].transactions;
+    if (!transactions.length) return alert('No transactions to export');
+    let csv = 'Description,Category,Date,Amount\n';
+    transactions.forEach(t => {
+      csv += `"${t.description.replace(/"/g, '""')}","${t.category}",${t.date},${t.amount}\n`;
+    });
+    const blob = new Blob([csv], {type: 'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${currentUser}_transactions.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // Backup JSON
+  backupJsonBtn.addEventListener('click', () => {
+    backupArea.value = JSON.stringify(users[currentUser], null, 2);
+  });
+
+  // Restore JSON
+  restoreJsonBtn.addEventListener('click', () => {
+    try {
+      const data = JSON.parse(backupArea.value);
+      if (!data) throw new Error('Invalid data');
+      // Simple validation
+      if (!data.categories || !data.transactions || !data.reminders) {
+        throw new Error('Missing required fields in data');
+      }
+      users[currentUser] = data;
+      saveUsers();
+      initApp();
+      alert('Data restored!');
+    } catch (err) {
+      alert('Failed to restore data: ' + err.message);
+    }
+  });
+
+  // Dark mode toggle
+  function applyDarkMode(enabled) {
+    if (enabled) {
+      document.body.classList.add('dark');
+      localStorage.setItem('pfm_darkMode', 'true');
+      darkModeToggle.checked = true;
+    } else {
+      document.body.classList.remove('dark');
+      localStorage.setItem('pfm_darkMode', 'false');
+      darkModeToggle.checked = false;
+    }
+  }
+  darkModeToggle.addEventListener('change', () => {
+    applyDarkMode(darkModeToggle.checked);
+  });
+  // Load dark mode preference
+  const darkModePref = localStorage.getItem('pfm_darkMode') === 'true';
+  applyDarkMode(darkModePref);
+
+  // Check logged in user on load
+  window.addEventListener('load', () => {
+    loadUsers();
+    const loggedUser = localStorage.getItem(LOGGED_USER_KEY);
+    if (loggedUser && users[loggedUser]) {
+      currentUser = loggedUser;
+      initApp();
+    }
+  });
+
+  // Register service worker for PWA
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js').then(() => {
+      console.log('Service Worker Registered');
+    });
+  }
 })();
 </script>
-
-<script>
-// Register Service Worker for PWA offline support
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('service-worker.js').then(reg => {
-      console.log('Service worker registered.', reg);
-    }).catch(err => {
-      console.log('Service worker registration failed:', err);
-    });
-  });
-}
-</script>
-
 </body>
 </html>
