@@ -1,50 +1,38 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
+  <title>Simple Finance App</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Finance Manager</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f0f0f0;
-      margin: 0;
-      padding: 0;
+      padding: 20px;
+      background: #f2f2f2;
     }
-
-    .container {
+    .box {
       max-width: 400px;
-      margin: 2rem auto;
-      padding: 1rem;
+      margin: auto;
       background: white;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      padding: 20px;
       border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
-
-    h2 {
-      text-align: center;
-    }
-
     input, button {
       width: 100%;
       padding: 10px;
-      margin: 0.5rem 0;
-      font-size: 1rem;
+      margin: 5px 0;
     }
-
     ul {
       list-style: none;
       padding: 0;
     }
-
     li {
-      padding: 0.5rem;
       background: #eee;
-      margin-bottom: 0.5rem;
+      padding: 8px;
+      margin: 4px 0;
       display: flex;
       justify-content: space-between;
     }
-
     .delete {
       background: red;
       color: white;
@@ -52,18 +40,10 @@
       padding: 4px 8px;
       cursor: pointer;
     }
-
-    .summary {
-      text-align: center;
-      margin: 1rem 0;
-    }
-
     #loginBox {
-      max-width: 300px;
-      margin: 5rem auto;
       text-align: center;
+      margin-top: 100px;
     }
-
     .hidden {
       display: none;
     }
@@ -71,86 +51,74 @@
 </head>
 <body>
 
-  <div id="loginBox">
-    <h2>Login</h2>
-    <input type="password" id="password" placeholder="Enter password">
-    <button onclick="login()">Login</button>
-    <p style="font-size: 0.8rem;">Password: <strong>admin</strong></p>
-  </div>
+<div id="loginBox">
+  <h2>Login</h2>
+  <input type="password" id="password" placeholder="Password: admin" />
+  <button onclick="login()">Login</button>
+</div>
 
-  <div class="container hidden" id="app">
-    <h2>Finance Manager</h2>
+<div class="box hidden" id="appBox">
+  <h2>Finance Tracker</h2>
+  <p><strong>Total Balance:</strong> ₹<span id="balance">0</span></p>
+  <input id="desc" placeholder="Description" />
+  <input id="amt" type="number" placeholder="Amount (+ or -)" />
+  <button onclick="addTransaction()">Add</button>
 
-    <div class="summary">
-      <p>Income: ₹<span id="income">0</span></p>
-      <p>Expenses: ₹<span id="expenses">0</span></p>
-    </div>
+  <ul id="list"></ul>
+</div>
 
-    <input type="text" id="desc" placeholder="Description" />
-    <input type="number" id="amount" placeholder="Amount (+ or -)" />
-    <button onclick="addTransaction()">Add Transaction</button>
+<script>
+  const passwordInput = document.getElementById('password');
+  const loginBox = document.getElementById('loginBox');
+  const appBox = document.getElementById('appBox');
+  const desc = document.getElementById('desc');
+  const amt = document.getElementById('amt');
+  const list = document.getElementById('list');
+  const balance = document.getElementById('balance');
 
-    <ul id="transactions"></ul>
-  </div>
+  let data = JSON.parse(localStorage.getItem('financeData') || '[]');
 
-  <script>
-    const loginBox = document.getElementById("loginBox");
-    const app = document.getElementById("app");
-    const desc = document.getElementById("desc");
-    const amount = document.getElementById("amount");
-    const incomeText = document.getElementById("income");
-    const expenseText = document.getElementById("expenses");
-    const transactionsList = document.getElementById("transactions");
-
-    let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
-
-    function login() {
-      const pw = document.getElementById("password").value;
-      if (pw === "admin") {
-        loginBox.classList.add("hidden");
-        app.classList.remove("hidden");
-        renderTransactions();
-      } else {
-        alert("Wrong password");
-      }
+  function login() {
+    if (passwordInput.value === 'admin') {
+      loginBox.classList.add('hidden');
+      appBox.classList.remove('hidden');
+      render();
+    } else {
+      alert('Wrong password');
     }
+  }
 
-    function addTransaction() {
-      const description = desc.value;
-      const amt = parseFloat(amount.value);
-      if (!description || isNaN(amt)) return alert("Invalid input");
+  function addTransaction() {
+    const d = desc.value.trim();
+    const a = parseFloat(amt.value);
+    if (!d || isNaN(a)) return alert('Enter valid data');
 
-      transactions.push({ description, amount: amt });
-      localStorage.setItem("transactions", JSON.stringify(transactions));
-      desc.value = "";
-      amount.value = "";
-      renderTransactions();
-    }
+    data.push({ d, a });
+    localStorage.setItem('financeData', JSON.stringify(data));
+    desc.value = '';
+    amt.value = '';
+    render();
+  }
 
-    function deleteTransaction(index) {
-      transactions.splice(index, 1);
-      localStorage.setItem("transactions", JSON.stringify(transactions));
-      renderTransactions();
-    }
+  function deleteItem(index) {
+    data.splice(index, 1);
+    localStorage.setItem('financeData', JSON.stringify(data));
+    render();
+  }
 
-    function renderTransactions() {
-      transactionsList.innerHTML = "";
-      let income = 0, expense = 0;
+  function render() {
+    list.innerHTML = '';
+    let total = 0;
+    data.forEach((item, i) => {
+      total += item.a;
+      const li = document.createElement('li');
+      li.innerHTML = \`\${item.d} - ₹\${item.a}
+        <button class="delete" onclick="deleteItem(\${i})">x</button>\`;
+      list.appendChild(li);
+    });
+    balance.textContent = total.toFixed(2);
+  }
+</script>
 
-      transactions.forEach((t, i) => {
-        const li = document.createElement("li");
-        li.innerHTML = \`
-          <span>\${t.description}: ₹\${t.amount}</span>
-          <button class="delete" onclick="deleteTransaction(\${i})">X</button>
-        \`;
-        transactionsList.appendChild(li);
-        if (t.amount >= 0) income += t.amount;
-        else expense += t.amount;
-      });
-
-      incomeText.textContent = income.toFixed(2);
-      expenseText.textContent = Math.abs(expense).toFixed(2);
-    }
-  </script>
 </body>
 </html>
