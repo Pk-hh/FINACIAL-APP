@@ -1,124 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Simple Finance App</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f2f2f2;
-    }
-    .box {
-      max-width: 400px;
-      margin: auto;
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin: 5px 0;
-    }
-    ul {
-      list-style: none;
-      padding: 0;
-    }
-    li {
-      background: #eee;
-      padding: 8px;
-      margin: 4px 0;
-      display: flex;
-      justify-content: space-between;
-    }
-    .delete {
-      background: red;
-      color: white;
-      border: none;
-      padding: 4px 8px;
-      cursor: pointer;
-    }
-    #loginBox {
-      text-align: center;
-      margin-top: 100px;
-    }
-    .hidden {
-      display: none;
-    }
-  </style>
+  <title>Test Login</title>
 </head>
 <body>
-
-<div id="loginBox">
-  <h2>Login</h2>
-  <input type="password" id="password" placeholder="Password: admin" />
+  <h2>Login Test</h2>
+  <input type="password" id="pw" placeholder="Enter password" />
   <button onclick="login()">Login</button>
-</div>
 
-<div class="box hidden" id="appBox">
-  <h2>Finance Tracker</h2>
-  <p><strong>Total Balance:</strong> ₹<span id="balance">0</span></p>
-  <input id="desc" placeholder="Description" />
-  <input id="amt" type="number" placeholder="Amount (+ or -)" />
-  <button onclick="addTransaction()">Add</button>
-
-  <ul id="list"></ul>
-</div>
-
-<script>
-  const passwordInput = document.getElementById('password');
-  const loginBox = document.getElementById('loginBox');
-  const appBox = document.getElementById('appBox');
-  const desc = document.getElementById('desc');
-  const amt = document.getElementById('amt');
-  const list = document.getElementById('list');
-  const balance = document.getElementById('balance');
-
-  let data = JSON.parse(localStorage.getItem('financeData') || '[]');
-
-  function login() {
-    if (passwordInput.value === 'admin') {
-      loginBox.classList.add('hidden');
-      appBox.classList.remove('hidden');
-      render();
-    } else {
-      alert('Wrong password');
+  <script>
+    function login() {
+      const pw = document.getElementById("pw").value;
+      if (pw === "admin") {
+        alert("Login success!");
+      } else {
+        alert("Wrong password");
+      }
     }
-  }
-
-  function addTransaction() {
-    const d = desc.value.trim();
-    const a = parseFloat(amt.value);
-    if (!d || isNaN(a)) return alert('Enter valid data');
-
-    data.push({ d, a });
-    localStorage.setItem('financeData', JSON.stringify(data));
-    desc.value = '';
-    amt.value = '';
-    render();
-  }
-
-  function deleteItem(index) {
-    data.splice(index, 1);
-    localStorage.setItem('financeData', JSON.stringify(data));
-    render();
-  }
-
-  function render() {
-    list.innerHTML = '';
-    let total = 0;
-    data.forEach((item, i) => {
-      total += item.a;
-      const li = document.createElement('li');
-      li.innerHTML = \`\${item.d} - ₹\${item.a}
-        <button class="delete" onclick="deleteItem(\${i})">x</button>\`;
-      list.appendChild(li);
-    });
-    balance.textContent = total.toFixed(2);
-  }
-</script>
-
+  </script>
 </body>
 </html>
