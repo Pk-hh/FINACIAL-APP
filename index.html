@@ -5,53 +5,69 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Finance Manager</title>
   <style>
+    :root {
+      --bg: #ffffff;
+      --text: #000000;
+      --card: #f4f4f4;
+    }
+
+    body.dark {
+      --bg: #121212;
+      --text: #ffffff;
+      --card: #1e1e1e;
+    }
+
     body {
       font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
       margin: 0;
       padding: 0;
       transition: background 0.3s, color 0.3s;
     }
-    .dark-mode {
-      background: #121212;
-      color: #fff;
-    }
+
     .container {
       max-width: 500px;
       margin: auto;
       padding: 1rem;
-      background: white;
+      background: var(--card);
       margin-top: 2rem;
       border-radius: 8px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    .dark-mode .container {
-      background: #1e1e1e;
-    }
+
     h1, h2 {
       text-align: center;
     }
+
     .summary {
       display: flex;
       justify-content: space-between;
       margin-bottom: 1rem;
     }
-    .filter, .auth, .toggle, .export {
+
+    .summary div {
+      flex: 1;
+      text-align: center;
+    }
+
+    .filter, .toggle, .export {
       text-align: center;
       margin: 1rem 0;
     }
+
     ul {
       list-style-type: none;
       padding: 0;
     }
+
     ul li {
       display: flex;
       justify-content: space-between;
       padding: 0.5rem 0;
       border-bottom: 1px solid #ccc;
     }
-    ul li span {
-      flex: 1;
-    }
+
     .delete-btn {
       background: red;
       color: white;
@@ -60,28 +76,41 @@
       cursor: pointer;
       border-radius: 4px;
     }
+
     form {
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
     }
+
     input, button, select {
       padding: 0.5rem;
       font-size: 1rem;
     }
+
     button {
       background: #4CAF50;
       color: white;
       border: none;
       cursor: pointer;
     }
+
     .hidden {
       display: none;
+    }
+
+    #auth {
+      max-width: 300px;
+      margin: 3rem auto;
+      background: var(--card);
+      padding: 1rem;
+      border-radius: 8px;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <div class="auth" id="auth">
+  <div id="auth">
     <h2>Login</h2>
     <input type="password" id="password" placeholder="Enter Password" />
     <button onclick="login()">Login</button>
@@ -147,8 +176,7 @@
         const newTransaction = { id: Date.now(), description: desc, amount };
         transactions.push(newTransaction);
         saveAndRender();
-        descriptionInput.value = '';
-        amountInput.value = '';
+        form.reset();
       }
     });
 
@@ -186,7 +214,6 @@
           <button class="delete-btn" data-id="\${t.id}">x</button>
         \`;
         transactionList.appendChild(li);
-
         if (t.amount >= 0) income += t.amount;
         else expense += t.amount;
       });
@@ -196,7 +223,7 @@
     }
 
     function toggleDarkMode() {
-      document.body.classList.toggle('dark-mode');
+      document.body.classList.toggle('dark');
     }
 
     function exportCSV() {
