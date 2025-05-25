@@ -1,637 +1,640 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Trendy Finance Manager</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet" />
-  <style>
-    /* Reset and basics */
-    * {
-      box-sizing: border-box;
-    }
-    body {
-      margin: 0; 
-      font-family: 'Poppins', sans-serif;
-      background: #f7f9fc;
-      color: #333;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-      transition: background 0.3s, color 0.3s;
-      padding-bottom: 3rem;
-    }
-    body.dark {
-      background: #121212;
-      color: #eee;
-    }
-    a {
-      text-decoration: none;
-      color: inherit;
-    }
-
-    /* Container */
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Trendy Finance Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #f0f3f7, #d9e2ec);
+    color: #2c3e50;
+    margin: 0; padding: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 2rem;
+    transition: background 0.4s, color 0.4s;
+  }
+  .container {
+    max-width: 480px;
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(12px);
+    border-radius: 20px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    padding: 2rem;
+    width: 100%;
+    user-select: none;
+  }
+  h1 {
+    font-weight: 600;
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    color: #34495e;
+    text-align: center;
+  }
+  label {
+    font-weight: 600;
+    display: block;
+    margin-top: 1rem;
+    margin-bottom: 0.3rem;
+    color: #34495e;
+  }
+  input[type="text"],
+  input[type="number"],
+  select {
+    width: 100%;
+    padding: 0.6rem 0.9rem;
+    border-radius: 10px;
+    border: 1.5px solid #ccc;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+    outline-offset: 2px;
+  }
+  input[type="text"]:focus,
+  input[type="number"]:focus,
+  select:focus {
+    border-color: #2980b9;
+  }
+  button {
+    background: #2980b9;
+    border: none;
+    padding: 0.7rem 1.4rem;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    margin-top: 1rem;
+  }
+  button:hover {
+    background: #3498db;
+  }
+  #voiceBtn {
+    background: #27ae60;
+    margin-left: 1rem;
+  }
+  #voiceBtn.listening {
+    background: #c0392b;
+  }
+  ul#list {
+    list-style: none;
+    padding: 0;
+    margin-top: 1rem;
+    max-height: 280px;
+    overflow-y: auto;
+  }
+  .transaction-card {
+    background: white;
+    border-radius: 15px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease;
+    align-items: center;
+  }
+  .transaction-card:hover {
+    transform: translateY(-4px);
+  }
+  .income {
+    border-left: 6px solid #27ae60;
+  }
+  .expense {
+    border-left: 6px solid #c0392b;
+  }
+  .amount {
+    font-weight: 700;
+    font-size: 1.1rem;
+    min-width: 90px;
+    text-align: right;
+  }
+  .desc-cat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .category-badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 8px;
+    color: white;
+    margin-top: 0.3rem;
+    font-weight: 600;
+    user-select: none;
+    width: fit-content;
+  }
+  .actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .actions button {
+    background: transparent;
+    color: #2980b9;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 0.3s;
+  }
+  .actions button.delete {
+    color: #c0392b;
+  }
+  .actions button:hover {
+    text-decoration: underline;
+  }
+  .summary {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-top: 1rem;
+    text-align: center;
+  }
+  .btn-group {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    margin-top: 1.2rem;
+  }
+  #backupArea {
+    margin-top: 1rem;
+    width: 100%;
+    min-height: 100px;
+    font-family: monospace;
+    padding: 0.8rem;
+    border-radius: 10px;
+    border: 1.5px solid #ccc;
+    resize: vertical;
+    background: #fefefe;
+  }
+  #darkModeToggle {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    background: #2980b9;
+    border: none;
+    padding: 0.8rem 1.2rem;
+    border-radius: 50%;
+    color: white;
+    font-size: 1.4rem;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    transition: background 0.3s;
+  }
+  #darkModeToggle:hover {
+    background: #3498db;
+  }
+  canvas {
+    max-width: 100%;
+    margin-top: 1.5rem;
+    border-radius: 20px;
+    background: white;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+  }
+  @media (max-width: 520px) {
     .container {
-      max-width: 480px;
-      margin: 2rem auto;
-      padding: 1rem 2rem 4rem;
-      background: #fff;
-      border-radius: 15px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.07);
-      transition: background 0.3s, box-shadow 0.3s;
+      padding: 1.5rem;
+      margin: 1rem;
     }
-    body.dark .container {
-      background: #1e1e1e;
-      box-shadow: 0 8px 25px rgba(255,255,255,0.1);
+    .btn-group {
+      flex-direction: column;
     }
+  }
 
-    /* Header */
-    h2 {
-      font-weight: 700;
-      font-size: 2.2rem;
-      margin-bottom: 1rem;
-      letter-spacing: 1px;
-      color: #3a86ff;
-    }
-
-    /* Form Inputs */
-    label {
-      display: block;
-      margin: 1rem 0 0.3rem 0;
-      font-weight: 500;
-      font-size: 0.9rem;
-      color: #555;
-    }
-    input[type=text], input[type=number], select, textarea {
-      width: 100%;
-      padding: 12px 16px;
-      border-radius: 12px;
-      border: 1.5px solid #ddd;
-      font-size: 1rem;
-      font-weight: 300;
-      transition: border-color 0.3s;
-      background: #fefefe;
-      color: #222;
-    }
-    body.dark input[type=text], 
-    body.dark input[type=number], 
-    body.dark select,
-    body.dark textarea {
-      background: #292929;
-      color: #eee;
-      border-color: #444;
-    }
-    input[type=text]:focus, input[type=number]:focus, select:focus, textarea:focus {
-      border-color: #3a86ff;
-      outline: none;
-    }
-
-    /* Buttons */
-    button {
-      cursor: pointer;
-      background: #3a86ff;
-      color: white;
-      font-weight: 600;
-      border: none;
-      border-radius: 12px;
-      padding: 12px 20px;
-      margin-top: 1.5rem;
-      font-size: 1.1rem;
-      box-shadow: 0 6px 12px rgba(58, 134, 255, 0.4);
-      transition: background 0.3s, box-shadow 0.3s;
-    }
-    button:hover {
-      background: #265dbf;
-      box-shadow: 0 8px 20px rgba(38, 93, 191, 0.6);
-    }
-    button:active {
-      transform: scale(0.97);
-    }
-    .small-btn {
-      background: #eee;
-      color: #666;
-      font-weight: 500;
-      font-size: 0.85rem;
-      padding: 6px 12px;
-      box-shadow: none;
-      margin-left: 0.5rem;
-      border-radius: 10px;
-      transition: background 0.3s, color 0.3s;
-    }
-    .small-btn:hover {
-      background: #3a86ff;
-      color: white;
-    }
-
-    /* Voice Button */
-    #voiceBtn {
-      background: #ff6584;
-      box-shadow: 0 6px 12px rgba(255, 101, 132, 0.4);
-    }
-    #voiceBtn:hover {
-      background: #e0446d;
-      box-shadow: 0 8px 20px rgba(224, 68, 109, 0.6);
-    }
-
-    /* Flex container for controls */
-    .controls {
-      margin-top: 1rem;
-      display: flex;
-      gap: 1rem;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    .controls select {
-      flex-grow: 1;
-      max-width: 180px;
-    }
-
-    /* Transaction List */
-    ul#list {
-      margin-top: 2rem;
-      max-height: 300px;
-      overflow-y: auto;
-      padding-left: 0;
-    }
-    ul#list li {
-      list-style: none;
-      background: #f3f7ff;
-      margin-bottom: 1rem;
-      border-radius: 15px;
-      padding: 1rem 1.5rem;
-      box-shadow: 0 6px 15px rgba(58, 134, 255, 0.15);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      transition: background 0.3s;
-    }
-    body.dark ul#list li {
-      background: #333c55;
-      box-shadow: 0 6px 15px rgba(58, 134, 255, 0.3);
-    }
-    ul#list li.income {
-      border-left: 6px solid #3a86ff;
-    }
-    ul#list li.expense {
-      border-left: 6px solid #ff6584;
-    }
-    ul#list li:hover {
-      background: #d7e3ff;
-    }
-    body.dark ul#list li:hover {
-      background: #40507a;
-    }
-
-    /* Transaction text */
-    ul#list li div {
-      flex-grow: 1;
-    }
-    ul#list li strong {
-      font-weight: 600;
-      font-size: 1.1rem;
-    }
-    ul#list li .meta {
-      font-size: 0.8rem;
-      color: #666;
-      margin-top: 4px;
-      display: block;
-    }
-    body.dark ul#list li .meta {
-      color: #aaa;
-    }
-    ul#list li div.amount {
-      min-width: 100px;
-      text-align: right;
-      font-weight: 600;
-      font-size: 1rem;
-      color: #222;
-    }
-    ul#list li.income div.amount {
-      color: #3a86ff;
-    }
-    ul#list li.expense div.amount {
-      color: #ff6584;
-    }
-
-    /* Action buttons inside list */
-    ul#list li div.actions {
-      display: flex;
-      gap: 0.5rem;
-      margin-left: 1rem;
-    }
-    .btn.edit {
-      background: #ffb400;
-      box-shadow: 0 6px 12px rgba(255, 180, 0, 0.4);
-      padding: 6px 12px;
-      font-size: 0.9rem;
-    }
-    .btn.edit:hover {
-      background: #cc8c00;
-      box-shadow: 0 8px 20px rgba(204, 140, 0, 0.6);
-    }
-    .btn.delete {
-      background: #ff3e3e;
-      box-shadow: 0 6px 12px rgba(255, 62, 62, 0.4);
-      padding: 6px 12px;
-      font-size: 0.9rem;
-    }
-    .btn.delete:hover {
-      background: #cc3232;
-      box-shadow: 0 8px 20px rgba(204, 50, 50, 0.6);
-    }
-
-    /* Summary & Balance */
-    h3 {
-      margin-top: 2rem;
-      font-weight: 600;
-      font-size: 1.6rem;
-      color: #3a86ff;
-    }
-    .summary {
-      font-weight: 500;
-      font-size: 1rem;
-      color: #555;
-      margin-top: 0.5rem;
-    }
-    body.dark .summary {
-      color: #bbb;
-    }
-
-    /* Backup area */
-    #backupArea {
-      width: 100%;
-      height: 120px;
-      margin-top: 1rem;
-      border-radius: 12px;
-      border: 1.5px solid #ddd;
-      padding: 10px 15px;
-      font-family: monospace;
-      font-size: 0.9rem;
-      resize: vertical;
-      background: #fafafa;
-      color: #222;
-    }
-    body.dark #backupArea {
-      background: #292929;
-      color: #eee;
-      border-color: #444;
-    }
-
-    /* Dark mode toggle */
-    #darkModeToggle {
-      position: fixed;
-      bottom: 1.5rem;
-      right: 1.5rem;
-      background: #3a86ff;
-      border: none;
-      padding: 14px;
-      border-radius: 50%;
-      box-shadow: 0 8px 20px rgba(58, 134, 255, 0.5);
-      cursor: pointer;
-      color: white;
-      font-size: 1.3rem;
-      transition: background 0.3s;
-      z-index: 1000;
-    }
-    #darkModeToggle:hover {
-      background: #265dbf;
-      box-shadow: 0 12px 25px rgba(38, 93, 191, 0.7);
-    }
-  </style>
+  /* Dark mode */
+  body.dark {
+    background: linear-gradient(135deg, #2c3e50, #4a6274);
+    color: #ecf0f1;
+  }
+  body.dark .container {
+    background: rgba(40,44,52,0.85);
+    box-shadow: 0 8px 24px rgba(255,255,255,0.1);
+  }
+  body.dark input,
+  body.dark select {
+    background: #34495e;
+    border-color: #567;
+    color: #ecf0f1;
+  }
+  body.dark input:focus,
+  body.dark select:focus {
+    border-color: #3498db;
+  }
+  body.dark button {
+    background: #3498db;
+  }
+  body.dark button:hover {
+    background: #2980b9;
+  }
+  body.dark #voiceBtn {
+    background: #27ae60;
+  }
+  body.dark #voiceBtn.listening {
+    background: #c0392b;
+  }
+  body.dark .transaction-card {
+    background: #3a3f4b;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  }
+  body.dark .actions button {
+    color: #5dade2;
+  }
+  body.dark .actions button.delete {
+    color: #e74c3c;
+  }
+  body.dark .category-badge {
+    color: #ecf0f1;
+  }
+</style>
 </head>
 <body>
-  <div class="container">
-    <h2>Finance Manager</h2>
+<div class="container" role="main" aria-label="Financial Management System">
 
-    <label for="desc">Description</label>
-    <input type="text" id="desc" placeholder="e.g. Salary, Groceries" />
+  <h1>Trendy Finance Manager</h1>
 
-    <label for="amount">Amount (use negative for expense)</label>
-    <input type="number" id="amount" placeholder="e.g. 500 or -200" />
+  <label for="desc">Description</label>
+  <input type="text" id="desc" placeholder="E.g. Salary, Groceries" autocomplete="off" aria-required="true" />
 
-    <label for="category">Category</label>
-    <select id="category">
-      <option>Salary</option>
-      <option>Food</option>
-      <option>Entertainment</option>
-      <option>Transport</option>
-      <option>Shopping</option>
-      <option>Other</option>
-    </select>
+  <label for="amount">Amount (negative for expense)</label>
+  <input type="number" id="amount" placeholder="E.g. 1000 or -150" step="0.01" aria-required="true" />
 
-    <div class="controls">
-      <button id="addBtn">Add Transaction</button>
-      <button id="voiceBtn" title="Add via Voice Input">🎤 Voice</button>
-    </div>
+  <label for="category">Category</label>
+  <select id="category" aria-label="Select transaction category">
+    <option value="Salary" data-color="#27ae60">Salary</option>
+    <option value="Food" data-color="#e67e22">Food</option>
+    <option value="Transport" data-color="#2980b9">Transport</option>
+    <option value="Shopping" data-color="#8e44ad">Shopping</option>
+    <option value="Entertainment" data-color="#f39c12">Entertainment</option>
+    <option value="Health" data-color="#c0392b">Health</option>
+    <option value="Other" data-color="#7f8c8d">Other</option>
+  </select>
 
-    <h3>Transactions</h3>
-    <ul id="list"></ul>
-
-    <h3>Summary</h3>
-    <p class="summary">Balance: <span id="balance">0</span></p>
-    <p class="summary">Income: <span id="income">0</span></p>
-    <p class="summary">Expense: <span id="expense">0</span></p>
-
-    <div class="controls">
-      <button id="downloadBtn">Download CSV</button>
-      <button id="backupBtn">Backup Data</button>
-      <button id="restoreBtn">Restore Data</button>
-    </div>
-
-    <textarea id="backupArea" placeholder="Backup data appears here..."></textarea>
+  <div class="controls" aria-label="Add transaction controls">
+    <button id="addBtn" aria-label="Add transaction">Add Transaction</button>
+    <button id="voiceBtn" title="Add via Voice Input" aria-label="Add transaction by voice input">🎤 Voice</button>
   </div>
 
-  <button id="darkModeToggle" title="Toggle Dark Mode">🌓</button>
+  <h3>Transactions</h3>
+  <ul id="list" aria-live="polite" aria-label="List of transactions"></ul>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <h3>Summary</h3>
+  <p class="summary">Balance: <span id="balance">$0.00</span></p>
+  <p class="summary">Income: <span id="income">$0.00</span></p>
+  <p class="summary">Expense: <span id="expense">$0.00</span></p>
 
-  <script>
-    // Data model - array of transactions
-    let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+  <div class="btn-group">
+    <button id="downloadBtn" aria-label="Download transactions CSV">Download CSV</button>
+    <button id="backupBtn" aria-label="Backup data to JSON">Backup JSON</button>
+    <button id="restoreBtn" aria-label="Restore data from JSON">Restore JSON</button>
+  </div>
 
-    // DOM elements
-    const descEl = document.getElementById('desc');
-    const amountEl = document.getElementById('amount');
-    const categoryEl = document.getElementById('category');
+  <textarea id="backupArea" placeholder="Backup data appears here or paste JSON here to restore"></textarea>
+
+  <canvas id="pieChart" aria-label="Spending by category pie chart"></canvas>
+
+</div>
+
+<button id="darkModeToggle" title="Toggle Dark Mode" aria-pressed="false" aria-label="Toggle dark mode">🌓</button>
+
+<script>
+  (() => {
+    // Elements
+    const descInput = document.getElementById('desc');
+    const amountInput = document.getElementById('amount');
+    const categorySelect = document.getElementById('category');
     const addBtn = document.getElementById('addBtn');
-    const listEl = document.getElementById('list');
+    const voiceBtn = document.getElementById('voiceBtn');
+    const list = document.getElementById('list');
     const balanceEl = document.getElementById('balance');
     const incomeEl = document.getElementById('income');
     const expenseEl = document.getElementById('expense');
-    const voiceBtn = document.getElementById('voiceBtn');
     const downloadBtn = document.getElementById('downloadBtn');
     const backupBtn = document.getElementById('backupBtn');
     const restoreBtn = document.getElementById('restoreBtn');
     const backupArea = document.getElementById('backupArea');
     const darkModeToggle = document.getElementById('darkModeToggle');
+    const pieChartCtx = document.getElementById('pieChart').getContext('2d');
 
-    // For editing
-    let editIndex = -1;
+    // Data
+    let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
 
-    // Add or Update transaction
+    // Save & Load
+    function saveData() {
+      localStorage.setItem('transactions', JSON.stringify(transactions));
+    }
+
+    function loadData() {
+      transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+    }
+
+    // Format currency
+    function formatCurrency(num) {
+      const sign = num < 0 ? "-" : "";
+      return sign + "$" + Math.abs(num).toFixed(2);
+    }
+
+    // Render transaction list
+    function renderTransactions() {
+      list.innerHTML = '';
+      if (transactions.length === 0) {
+        list.innerHTML = `<li style="text-align:center; color:#999; margin-top:1rem;">No transactions yet</li>`;
+        return;
+      }
+      transactions.forEach((t, i) => {
+        const li = document.createElement('li');
+        li.className = 'transaction-card ' + (t.amount >= 0 ? 'income' : 'expense');
+        li.setAttribute('data-index', i);
+        // Category color
+        const opt = [...categorySelect.options].find(o => o.value === t.category);
+        const color = opt ? opt.dataset.color : '#7f8c8d';
+
+        li.innerHTML = `
+          <div class="desc-cat">
+            <div><strong>${t.description}</strong></div>
+            <div class="category-badge" style="background:${color}">${t.category}</div>
+          </div>
+          <div class="amount">${formatCurrency(t.amount)}</div>
+          <div class="actions" aria-label="Edit or delete transaction">
+            <button class="edit" aria-label="Edit transaction">✏️</button>
+            <button class="delete" aria-label="Delete transaction">🗑️</button>
+          </div>
+        `;
+
+        // Edit
+        li.querySelector('.edit').onclick = () => editTransaction(i);
+        // Delete
+        li.querySelector('.delete').onclick = () => deleteTransaction(i);
+
+        list.appendChild(li);
+      });
+    }
+
+    // Update summary
+    function updateSummary() {
+      const amounts = transactions.map(t => t.amount);
+      const income = amounts.filter(a => a > 0).reduce((a, b) => a + b, 0);
+      const expense = amounts.filter(a => a < 0).reduce((a, b) => a + b, 0);
+      const balance = income + expense;
+
+      incomeEl.textContent = formatCurrency(income);
+      expenseEl.textContent = formatCurrency(expense);
+      balanceEl.textContent = formatCurrency(balance);
+    }
+
+    // Add transaction
     function addTransaction() {
-      const desc = descEl.value.trim();
-      const amount = parseFloat(amountEl.value);
-      const category = categoryEl.value;
+      const desc = descInput.value.trim();
+      const amount = parseFloat(amountInput.value);
+      const category = categorySelect.value;
 
-      if (!desc) {
-        alert('Please enter a description.');
+      if (!desc || isNaN(amount)) {
+        alert('Please enter valid description and amount!');
         return;
       }
-      if (isNaN(amount) || amount === 0) {
-        alert('Please enter a valid amount (non-zero).');
-        return;
-      }
-
-      if (editIndex > -1) {
-        // update existing
-        transactions[editIndex] = { desc, amount, category };
-        editIndex = -1;
-        addBtn.textContent = 'Add Transaction';
-      } else {
-        // add new
-        transactions.push({ desc, amount, category });
-      }
-
-      saveAndRender();
+      transactions.push({ description: desc, amount, category });
+      saveData();
+      renderTransactions();
+      updateSummary();
+      updatePieChart();
       clearInputs();
     }
 
-    // Clear input fields
+    // Clear inputs
     function clearInputs() {
-      descEl.value = '';
-      amountEl.value = '';
-      categoryEl.value = 'Salary';
-      descEl.focus();
-    }
-
-    // Save to localStorage and re-render list & summary
-    function saveAndRender() {
-      localStorage.setItem('transactions', JSON.stringify(transactions));
-      renderList();
-      renderSummary();
-    }
-
-    // Render the transaction list
-    function renderList() {
-      listEl.innerHTML = '';
-
-      if (transactions.length === 0) {
-        listEl.innerHTML = '<li>No transactions yet</li>';
-        return;
-      }
-
-      transactions.forEach((t, i) => {
-        const li = document.createElement('li');
-        li.classList.add(t.amount >= 0 ? 'income' : 'expense');
-
-        // Left info (desc + category)
-        const infoDiv = document.createElement('div');
-        infoDiv.innerHTML = `<strong>${t.desc}</strong><span class="meta">${t.category}</span>`;
-
-        // Amount div
-        const amountDiv = document.createElement('div');
-        amountDiv.className = 'amount';
-        amountDiv.textContent = (t.amount >= 0 ? '+' : '-') + '$' + Math.abs(t.amount).toFixed(2);
-
-        // Actions div
-        const actionsDiv = document.createElement('div');
-        actionsDiv.className = 'actions';
-
-        // Edit button
-        const editBtn = document.createElement('button');
-        editBtn.className = 'btn edit';
-        editBtn.textContent = 'Edit';
-        editBtn.onclick = () => editTransaction(i);
-
-        // Delete button
-        const delBtn = document.createElement('button');
-        delBtn.className = 'btn delete';
-        delBtn.textContent = 'Delete';
-        delBtn.onclick = () => deleteTransaction(i);
-
-        actionsDiv.appendChild(editBtn);
-        actionsDiv.appendChild(delBtn);
-
-        li.appendChild(infoDiv);
-        li.appendChild(amountDiv);
-        li.appendChild(actionsDiv);
-
-        listEl.appendChild(li);
-      });
-    }
-
-    // Render summary: balance, income, expense
-    function renderSummary() {
-      const amounts = transactions.map(t => t.amount);
-      const income = amounts.filter(a => a > 0).reduce((acc, a) => acc + a, 0);
-      const expense = amounts.filter(a => a < 0).reduce((acc, a) => acc + a, 0);
-      const balance = income + expense;
-
-      balanceEl.textContent = '$' + balance.toFixed(2);
-      incomeEl.textContent = '$' + income.toFixed(2);
-      expenseEl.textContent = '$' + Math.abs(expense).toFixed(2);
-    }
-
-    // Edit transaction
-    function editTransaction(index) {
-      const t = transactions[index];
-      descEl.value = t.desc;
-      amountEl.value = t.amount;
-      categoryEl.value = t.category;
-      addBtn.textContent = 'Update Transaction';
-      editIndex = index;
+      descInput.value = '';
+      amountInput.value = '';
+      categorySelect.selectedIndex = 0;
+      descInput.focus();
     }
 
     // Delete transaction
-    function deleteTransaction(index) {
-      if (confirm('Are you sure you want to delete this transaction?')) {
-        transactions.splice(index, 1);
-        saveAndRender();
-        if (editIndex === index) {
-          clearInputs();
-          editIndex = -1;
-          addBtn.textContent = 'Add Transaction';
-        }
+    function deleteTransaction(i) {
+      if (confirm('Delete this transaction?')) {
+        transactions.splice(i, 1);
+        saveData();
+        renderTransactions();
+        updateSummary();
+        updatePieChart();
       }
     }
 
-    // Download CSV
-    function downloadCSV() {
-      if (transactions.length === 0) {
-        alert('No transactions to download.');
+    // Edit transaction
+    function editTransaction(i) {
+      const t = transactions[i];
+      descInput.value = t.description;
+      amountInput.value = t.amount;
+      categorySelect.value = t.category;
+      addBtn.textContent = 'Update Transaction';
+      addBtn.onclick = () => {
+        updateTransaction(i);
+      };
+    }
+
+    // Update transaction
+    function updateTransaction(i) {
+      const desc = descInput.value.trim();
+      const amount = parseFloat(amountInput.value);
+      const category = categorySelect.value;
+
+      if (!desc || isNaN(amount)) {
+        alert('Please enter valid description and amount!');
         return;
       }
-      let csv = 'Description,Amount,Category\n';
-      transactions.forEach(t => {
-        csv += `"${t.desc.replace(/"/g, '""')}",${t.amount},"${t.category}"\n`;
-      });
+      transactions[i] = { description: desc, amount, category };
+      saveData();
+      renderTransactions();
+      updateSummary();
+      updatePieChart();
+      clearInputs();
+      addBtn.textContent = 'Add Transaction';
+      addBtn.onclick = addTransaction;
+    }
 
-      const blob = new Blob([csv], { type: 'text/csv' });
+    // CSV Download
+    function downloadCSV() {
+      if (transactions.length === 0) {
+        alert('No transactions to export!');
+        return;
+      }
+      const header = ['Description', 'Amount', 'Category'];
+      const rows = transactions.map(t => [t.description, t.amount, t.category]);
+      const csvContent = [header, ...rows].map(e => e.map(v => `"${v}"`).join(',')).join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'finance_transactions.csv';
+      a.download = 'transactions.csv';
       a.click();
       URL.revokeObjectURL(url);
     }
 
-    // Backup data
-    function backupData() {
+    // Backup JSON
+    function backupJSON() {
       backupArea.value = JSON.stringify(transactions, null, 2);
-      alert('Data backed up! You can copy it from the textarea below.');
+      backupArea.focus();
+      backupArea.select();
     }
 
-    // Restore data
-    function restoreData() {
+    // Restore JSON
+    function restoreJSON() {
       try {
         const data = JSON.parse(backupArea.value);
-        if (!Array.isArray(data)) throw new Error('Invalid data format');
+        if (!Array.isArray(data)) throw new Error();
         transactions = data;
-        saveAndRender();
+        saveData();
+        renderTransactions();
+        updateSummary();
+        updatePieChart();
         alert('Data restored successfully!');
-      } catch (e) {
-        alert('Failed to restore data: ' + e.message);
+      } catch {
+        alert('Invalid JSON data!');
       }
     }
 
     // Dark mode toggle
     function toggleDarkMode() {
-      document.body.classList.toggle('dark');
-      // Save preference
-      localStorage.setItem('darkMode', document.body.classList.contains('dark'));
+      const isDark = document.body.classList.toggle('dark');
+      darkModeToggle.setAttribute('aria-pressed', isDark);
+      localStorage.setItem('darkMode', isDark);
     }
 
     // Load dark mode preference
     function loadDarkMode() {
-      const darkMode = localStorage.getItem('darkMode');
-      if (darkMode === 'true') {
+      const darkMode = localStorage.getItem('darkMode') === 'true';
+      if (darkMode) {
         document.body.classList.add('dark');
+        darkModeToggle.setAttribute('aria-pressed', true);
       }
     }
 
-    // Voice input (Web Speech API)
-    function voiceInput() {
-      if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-        alert('Sorry, your browser does not support voice input.');
-        return;
-      }
+    // Pie chart setup
+    let pieChart;
+    function updatePieChart() {
+      const categorySums = {};
+      transactions.forEach(t => {
+        if (t.amount < 0) { // expenses only
+          categorySums[t.category] = (categorySums[t.category] || 0) + Math.abs(t.amount);
+        }
+      });
+      const labels = Object.keys(categorySums);
+      const data = labels.map(l => categorySums[l]);
+      const bgColors = labels.map(label => {
+        const opt = [...categorySelect.options].find(o => o.value === label);
+        return opt ? opt.dataset.color : '#7f8c8d';
+      });
+
+      if (pieChart) pieChart.destroy();
+      pieChart = new Chart(pieChartCtx, {
+        type: 'pie',
+        data: {
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: bgColors,
+            borderWidth: 1,
+            borderColor: '#fff'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { color: getComputedStyle(document.body).color }
+            }
+          }
+        }
+      });
+    }
+
+    // Voice input
+    let recognition;
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
+      recognition = new SpeechRecognition();
       recognition.lang = 'en-US';
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
-      recognition.start();
 
-      voiceBtn.textContent = '🎙️ Listening...';
-
-      recognition.onresult = event => {
-        const speech = event.results[0][0].transcript.toLowerCase();
-        voiceBtn.textContent = '🎤 Voice';
-
-        // Very basic parsing:
-        // Example: "salary five hundred"
-        // We'll expect format: "description amount"
-        // Try to extract amount (number) and description (text)
-        const parts = speech.split(' ');
-        let amount = null;
-        let desc = '';
-        for (let p of parts) {
-          const num = parseFloat(p.replace(/[^0-9.-]/g, ''));
-          if (!isNaN(num)) {
-            amount = num;
-          } else {
-            desc += p + ' ';
-          }
-        }
-        desc = desc.trim();
-        if (desc && amount !== null) {
-          descEl.value = desc.charAt(0).toUpperCase() + desc.slice(1);
-          amountEl.value = amount;
-          categoryEl.value = 'Other'; // default category
-          addTransaction();
-        } else {
-          alert('Could not parse voice input. Please try again.');
-        }
-      };
-
-      recognition.onerror = event => {
-        voiceBtn.textContent = '🎤 Voice';
-        alert('Voice input error: ' + event.error);
+      recognition.onstart = () => {
+        voiceBtn.classList.add('listening');
+        voiceBtn.textContent = '🎙️...';
       };
 
       recognition.onend = () => {
+        voiceBtn.classList.remove('listening');
         voiceBtn.textContent = '🎤 Voice';
       };
+
+      recognition.onresult = (event) => {
+        const spoken = event.results[0][0].transcript.trim();
+        // Expect format: "Description amount category"
+        // e.g. "Groceries 50 food"
+        const parts = spoken.toLowerCase().split(' ');
+        // Try to parse last word as category if matches
+        let cat = null;
+        let amt = null;
+        let desc = null;
+
+        const categories = [...categorySelect.options].map(o => o.value.toLowerCase());
+        // Find last word category match
+        for (let i = parts.length - 1; i >= 0; i--) {
+          if (categories.includes(parts[i])) {
+            cat = parts[i];
+            parts.splice(i, 1);
+            break;
+          }
+        }
+        // Find amount (number) in remaining parts
+        for (let i = 0; i < parts.length; i++) {
+          const n = parseFloat(parts[i]);
+          if (!isNaN(n)) {
+            amt = n;
+            parts.splice(i, 1);
+            break;
+          }
+        }
+        desc = parts.join(' ') || 'Voice input';
+
+        if (amt === null || cat === null) {
+          alert(`Couldn't parse amount or category. Please say like: "Groceries 50 food"`);
+          return;
+        }
+        descInput.value = desc;
+        amountInput.value = amt;
+        categorySelect.value = cat.charAt(0).toUpperCase() + cat.slice(1);
+        addTransaction();
+      };
+
+      voiceBtn.onclick = () => {
+        recognition.start();
+      };
+    } else {
+      voiceBtn.style.display = 'none';
     }
 
     // Event listeners
-    addBtn.addEventListener('click', addTransaction);
-    voiceBtn.addEventListener('click', voiceInput);
-    downloadBtn.addEventListener('click', downloadCSV);
-    backupBtn.addEventListener('click', backupData);
-    restoreBtn.addEventListener('click', restoreData);
-    darkModeToggle.addEventListener('click', toggleDarkMode);
+    addBtn.onclick = addTransaction;
+    downloadBtn.onclick = downloadCSV;
+    backupBtn.onclick = backupJSON;
+    restoreBtn.onclick = restoreJSON;
+    darkModeToggle.onclick = toggleDarkMode;
 
-    // Initial rendering
-    loadDarkMode();
-    saveAndRender();
-
-  </script>
+    // Init
+    function init() {
+      loadData();
+      renderTransactions();
+      updateSummary();
+      updatePieChart();
+      loadDarkMode();
+    }
+    init();
+  })();
+</script>
 </body>
-</html>  
-  
-
----
-
-### Problem: Buttons are not working
-
-Thanks for sharing your full code! From what I see, the buttons all have their event listeners properly attached at the bottom with:
-
-```js
-addBtn.addEventListener('click', addTransaction);
-voiceBtn.addEventListener('click', voiceInput);
-downloadBtn.addEventListener('click', downloadCSV);
-backupBtn.addEventListener('click', backupData);
-restoreBtn.addEventListener('click', restoreData);
-darkModeToggle.addEventListener('click', toggleDarkMode);
+</html>
