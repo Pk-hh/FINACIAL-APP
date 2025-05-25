@@ -5,248 +5,151 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Finance Manager</title>
   <style>
-    :root {
-      --bg: #ffffff;
-      --text: #000000;
-      --card: #f4f4f4;
-    }
-
-    body.dark {
-      --bg: #121212;
-      --text: #ffffff;
-      --card: #1e1e1e;
-    }
-
     body {
       font-family: Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      background: #f0f0f0;
       margin: 0;
       padding: 0;
-      transition: background 0.3s, color 0.3s;
     }
 
     .container {
-      max-width: 500px;
-      margin: auto;
+      max-width: 400px;
+      margin: 2rem auto;
       padding: 1rem;
-      background: var(--card);
-      margin-top: 2rem;
-      border-radius: 8px;
+      background: white;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 8px;
     }
 
-    h1, h2 {
+    h2 {
       text-align: center;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 0.5rem 0;
+      font-size: 1rem;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      padding: 0.5rem;
+      background: #eee;
+      margin-bottom: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .delete {
+      background: red;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      cursor: pointer;
     }
 
     .summary {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 1rem;
-    }
-
-    .summary div {
-      flex: 1;
-      text-align: center;
-    }
-
-    .filter, .toggle, .export {
       text-align: center;
       margin: 1rem 0;
     }
 
-    ul {
-      list-style-type: none;
-      padding: 0;
-    }
-
-    ul li {
-      display: flex;
-      justify-content: space-between;
-      padding: 0.5rem 0;
-      border-bottom: 1px solid #ccc;
-    }
-
-    .delete-btn {
-      background: red;
-      color: white;
-      border: none;
-      padding: 0 8px;
-      cursor: pointer;
-      border-radius: 4px;
-    }
-
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    input, button, select {
-      padding: 0.5rem;
-      font-size: 1rem;
-    }
-
-    button {
-      background: #4CAF50;
-      color: white;
-      border: none;
-      cursor: pointer;
+    #loginBox {
+      max-width: 300px;
+      margin: 5rem auto;
+      text-align: center;
     }
 
     .hidden {
       display: none;
     }
-
-    #auth {
-      max-width: 300px;
-      margin: 3rem auto;
-      background: var(--card);
-      padding: 1rem;
-      border-radius: 8px;
-      text-align: center;
-    }
   </style>
 </head>
 <body>
-  <div id="auth">
+
+  <div id="loginBox">
     <h2>Login</h2>
-    <input type="password" id="password" placeholder="Enter Password" />
+    <input type="password" id="password" placeholder="Enter password">
     <button onclick="login()">Login</button>
-    <p style="font-size: small;">Hint: password is <b>admin</b></p>
+    <p style="font-size: 0.8rem;">Password: <strong>admin</strong></p>
   </div>
 
   <div class="container hidden" id="app">
-    <h1>Finance Manager</h1>
-
-    <div class="toggle">
-      <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
-    </div>
+    <h2>Finance Manager</h2>
 
     <div class="summary">
-      <div>
-        <h2>Income</h2>
-        <p id="income">₹0.00</p>
-      </div>
-      <div>
-        <h2>Expense</h2>
-        <p id="expense">₹0.00</p>
-      </div>
+      <p>Income: ₹<span id="income">0</span></p>
+      <p>Expenses: ₹<span id="expenses">0</span></p>
     </div>
 
-    <div class="filter">
-      <label for="filter-type">Filter:</label>
-      <select id="filter-type">
-        <option value="all">All</option>
-        <option value="income">Income</option>
-        <option value="expense">Expense</option>
-      </select>
-    </div>
+    <input type="text" id="desc" placeholder="Description" />
+    <input type="number" id="amount" placeholder="Amount (+ or -)" />
+    <button onclick="addTransaction()">Add Transaction</button>
 
-    <ul id="transaction-list"></ul>
-
-    <form id="transaction-form">
-      <input type="text" id="description" placeholder="Description" required />
-      <input type="number" id="amount" placeholder="Amount" required />
-      <button type="submit">Add Transaction</button>
-    </form>
-
-    <div class="export">
-      <button onclick="exportCSV()">Export to CSV</button>
-    </div>
+    <ul id="transactions"></ul>
   </div>
 
   <script>
-    const form = document.getElementById('transaction-form');
-    const descriptionInput = document.getElementById('description');
-    const amountInput = document.getElementById('amount');
-    const transactionList = document.getElementById('transaction-list');
-    const incomeDisplay = document.getElementById('income');
-    const expenseDisplay = document.getElementById('expense');
-    const filterSelect = document.getElementById('filter-type');
+    const loginBox = document.getElementById("loginBox");
+    const app = document.getElementById("app");
+    const desc = document.getElementById("desc");
+    const amount = document.getElementById("amount");
+    const incomeText = document.getElementById("income");
+    const expenseText = document.getElementById("expenses");
+    const transactionsList = document.getElementById("transactions");
 
-    let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+    let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
 
-    form.addEventListener('submit', function(e) {
-      e.preventDefault();
-      const desc = descriptionInput.value;
-      const amount = parseFloat(amountInput.value);
-      if (desc && !isNaN(amount)) {
-        const newTransaction = { id: Date.now(), description: desc, amount };
-        transactions.push(newTransaction);
-        saveAndRender();
-        form.reset();
+    function login() {
+      const pw = document.getElementById("password").value;
+      if (pw === "admin") {
+        loginBox.classList.add("hidden");
+        app.classList.remove("hidden");
+        renderTransactions();
+      } else {
+        alert("Wrong password");
       }
-    });
+    }
 
-    transactionList.addEventListener('click', function(e) {
-      if (e.target.classList.contains('delete-btn')) {
-        const id = e.target.dataset.id;
-        transactions = transactions.filter(t => t.id != id);
-        saveAndRender();
-      }
-    });
+    function addTransaction() {
+      const description = desc.value;
+      const amt = parseFloat(amount.value);
+      if (!description || isNaN(amt)) return alert("Invalid input");
 
-    filterSelect.addEventListener('change', renderTransactions);
+      transactions.push({ description, amount: amt });
+      localStorage.setItem("transactions", JSON.stringify(transactions));
+      desc.value = "";
+      amount.value = "";
+      renderTransactions();
+    }
 
-    function saveAndRender() {
-      localStorage.setItem('transactions', JSON.stringify(transactions));
+    function deleteTransaction(index) {
+      transactions.splice(index, 1);
+      localStorage.setItem("transactions", JSON.stringify(transactions));
       renderTransactions();
     }
 
     function renderTransactions() {
-      transactionList.innerHTML = '';
-      let income = 0;
-      let expense = 0;
-      const filter = filterSelect.value;
-      const filtered = transactions.filter(t =>
-        filter === 'all' ||
-        (filter === 'income' && t.amount >= 0) ||
-        (filter === 'expense' && t.amount < 0)
-      );
+      transactionsList.innerHTML = "";
+      let income = 0, expense = 0;
 
-      filtered.forEach(t => {
-        const li = document.createElement('li');
+      transactions.forEach((t, i) => {
+        const li = document.createElement("li");
         li.innerHTML = \`
-          <span>\${t.description}</span>
-          <span style="color:\${t.amount < 0 ? 'red' : 'green'}">₹\${t.amount}</span>
-          <button class="delete-btn" data-id="\${t.id}">x</button>
+          <span>\${t.description}: ₹\${t.amount}</span>
+          <button class="delete" onclick="deleteTransaction(\${i})">X</button>
         \`;
-        transactionList.appendChild(li);
+        transactionsList.appendChild(li);
         if (t.amount >= 0) income += t.amount;
         else expense += t.amount;
       });
 
-      incomeDisplay.textContent = \`₹\${income.toFixed(2)}\`;
-      expenseDisplay.textContent = \`₹\${Math.abs(expense).toFixed(2)}\`;
-    }
-
-    function toggleDarkMode() {
-      document.body.classList.toggle('dark');
-    }
-
-    function exportCSV() {
-      const rows = [['Description', 'Amount']];
-      transactions.forEach(t => rows.push([t.description, t.amount]));
-      const csv = rows.map(r => r.join(',')).join('\\n');
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'transactions.csv';
-      a.click();
-    }
-
-    function login() {
-      const pw = document.getElementById('password').value;
-      if (pw === 'admin') {
-        document.getElementById('auth').classList.add('hidden');
-        document.getElementById('app').classList.remove('hidden');
-        renderTransactions();
-      } else {
-        alert('Wrong password!');
-      }
+      incomeText.textContent = income.toFixed(2);
+      expenseText.textContent = Math.abs(expense).toFixed(2);
     }
   </script>
 </body>
