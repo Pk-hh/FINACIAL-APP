@@ -1,16 +1,99 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="style.css" />
   <title>Finance Manager</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      transition: background 0.3s, color 0.3s;
+    }
+    .dark-mode {
+      background: #121212;
+      color: #fff;
+    }
+    .container {
+      max-width: 500px;
+      margin: auto;
+      padding: 1rem;
+      background: white;
+      margin-top: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .dark-mode .container {
+      background: #1e1e1e;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    .summary {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .filter, .auth, .toggle, .export {
+      text-align: center;
+      margin: 1rem 0;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    ul li {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #ccc;
+    }
+    ul li span {
+      flex: 1;
+    }
+    .delete-btn {
+      background: red;
+      color: white;
+      border: none;
+      padding: 0 8px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    input, button, select {
+      padding: 0.5rem;
+      font-size: 1rem;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
+  <div class="auth" id="auth">
+    <h2>Login</h2>
+    <input type="password" id="password" placeholder="Enter Password" />
+    <button onclick="login()">Login</button>
+    <p style="font-size: small;">Hint: password is <b>admin</b></p>
+  </div>
+
+  <div class="container hidden" id="app">
     <h1>Finance Manager</h1>
+
+    <div class="toggle">
+      <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
+    </div>
 
     <div class="summary">
       <div>
@@ -39,8 +122,558 @@
       <input type="number" id="amount" placeholder="Amount" required />
       <button type="submit">Add Transaction</button>
     </form>
+
+    <div class="export">
+      <button onclick="exportCSV()">Export to CSV</button>
+    </div>
   </div>
 
-  <script src="app.js"></script>
+  <script>
+    const form = document.getElementById('transaction-form');
+    const descriptionInput = document.getElementById('description');
+    const amountInput = document.getElementById('amount');
+    const transactionList = document.getElementById('transaction-list');
+    const incomeDisplay = document.getElementById('income');
+    const expenseDisplay = document.getElementById('expense');
+    const filterSelect = document.getElementById('filter-type');
+
+    let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const desc = descriptionInput.value;
+      const amount = parseFloat(amountInput.value);
+      if (desc && !isNaN(amount)) {
+        const newTransaction = { id: Date.now(), description: desc, amount };
+        transactions.push(newTransaction);
+        saveAndRender();
+        descriptionInput.value = '';
+        amountInput.value = '';
+      }
+    });
+
+    transactionList.addEventListener('click', function(e) {
+      if (e.target.classList.contains('delete-btn')) {
+        const id = e.target.dataset.id;
+        transactions = transactions.filter(t => t.id != id);
+        saveAndRender();
+      }
+    });
+
+    filterSelect.addEventListener('change', renderTransactions);
+
+    function saveAndRender() {
+      localStorage.setItem('transactions', JSON.stringify(transactions));
+      renderTransactions();
+    }
+
+    function renderTransactions() {
+      transactionList.innerHTML = '';
+      let income = 0;
+      let expense = 0;
+      const filter = filterSelect.value;
+      const filtered = transactions.filter(t =>
+        filter === 'all' ||
+        (filter === 'income' && t.amount >= 0) ||
+        (filter === 'expense' && t.amount < 0)
+      );
+
+      filtered.forEach(t => {
+        const li = document.createElement('li');
+        li.innerHTML = \`
+          <span>\${t.description}</span>
+          <span style="color:\${t.amount < 0 ? 'red' : 'green'}">₹\${t.amount}</span>
+          <button class="delete-btn" data-id="\${t.id}">x</button>
+        \`;
+        transactionList.appendChild(li);
+
+        if (t.amount >= 0) income += t.amount;
+        else expense += t.amount;
+      });
+
+      incomeDisplay.textContent = \`₹\${income.toFixed(2)}\`;
+      expenseDisplay.textContent = \`₹\${Math.abs(expense).toFixed(2)}\`;
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+    }
+
+    function exportCSV() {
+      const rows = [['Description', 'Amount']];
+      transactions.forEach(t => rows.push([t.description, t.amount]));
+      const csv = rows.map(r => r.join(',')).join('\\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'transactions.csv';
+      a.click();
+    }
+
+    function login() {
+      const pw = document.getElementById('password').value;
+      if (pw === 'admin') {
+        document.getElementById('auth').classList.add('hidden');
+        document.getElementById('app').classList.remove('hidden');
+        renderTransactions();
+      } else {
+        alert('Wrong password!');
+      }
+    }
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Finance Manager</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      transition: background 0.3s, color 0.3s;
+    }
+    .dark-mode {
+      background: #121212;
+      color: #fff;
+    }
+    .container {
+      max-width: 500px;
+      margin: auto;
+      padding: 1rem;
+      background: white;
+      margin-top: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .dark-mode .container {
+      background: #1e1e1e;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    .summary {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .filter, .auth, .toggle, .export {
+      text-align: center;
+      margin: 1rem 0;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    ul li {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #ccc;
+    }
+    ul li span {
+      flex: 1;
+    }
+    .delete-btn {
+      background: red;
+      color: white;
+      border: none;
+      padding: 0 8px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    input, button, select {
+      padding: 0.5rem;
+      font-size: 1rem;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="auth" id="auth">
+    <h2>Login</h2>
+    <input type="password" id="password" placeholder="Enter Password" />
+    <button onclick="login()">Login</button>
+    <p style="font-size: small;">Hint: password is <b>admin</b></p>
+  </div>
+
+  <div class="container hidden" id="app">
+    <h1>Finance Manager</h1>
+
+    <div class="toggle">
+      <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
+    </div>
+
+    <div class="summary">
+      <div>
+        <h2>Income</h2>
+        <p id="income">₹0.00</p>
+      </div>
+      <div>
+        <h2>Expense</h2>
+        <p id="expense">₹0.00</p>
+      </div>
+    </div>
+
+    <div class="filter">
+      <label for="filter-type">Filter:</label>
+      <select id="filter-type">
+        <option value="all">All</option>
+        <option value="income">Income</option>
+        <option value="expense">Expense</option>
+      </select>
+    </div>
+
+    <ul id="transaction-list"></ul>
+
+    <form id="transaction-form">
+      <input type="text" id="description" placeholder="Description" required />
+      <input type="number" id="amount" placeholder="Amount" required />
+      <button type="submit">Add Transaction</button>
+    </form>
+
+    <div class="export">
+      <button onclick="exportCSV()">Export to CSV</button>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('transaction-form');
+    const descriptionInput = document.getElementById('description');
+    const amountInput = document.getElementById('amount');
+    const transactionList = document.getElementById('transaction-list');
+    const incomeDisplay = document.getElementById('income');
+    const expenseDisplay = document.getElementById('expense');
+    const filterSelect = document.getElementById('filter-type');
+
+    let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const desc = descriptionInput.value;
+      const amount = parseFloat(amountInput.value);
+      if (desc && !isNaN(amount)) {
+        const newTransaction = { id: Date.now(), description: desc, amount };
+        transactions.push(newTransaction);
+        saveAndRender();
+        descriptionInput.value = '';
+        amountInput.value = '';
+      }
+    });
+
+    transactionList.addEventListener('click', function(e) {
+      if (e.target.classList.contains('delete-btn')) {
+        const id = e.target.dataset.id;
+        transactions = transactions.filter(t => t.id != id);
+        saveAndRender();
+      }
+    });
+
+    filterSelect.addEventListener('change', renderTransactions);
+
+    function saveAndRender() {
+      localStorage.setItem('transactions', JSON.stringify(transactions));
+      renderTransactions();
+    }
+
+    function renderTransactions() {
+      transactionList.innerHTML = '';
+      let income = 0;
+      let expense = 0;
+      const filter = filterSelect.value;
+      const filtered = transactions.filter(t =>
+        filter === 'all' ||
+        (filter === 'income' && t.amount >= 0) ||
+        (filter === 'expense' && t.amount < 0)
+      );
+
+      filtered.forEach(t => {
+        const li = document.createElement('li');
+        li.innerHTML = \`
+          <span>\${t.description}</span>
+          <span style="color:\${t.amount < 0 ? 'red' : 'green'}">₹\${t.amount}</span>
+          <button class="delete-btn" data-id="\${t.id}">x</button>
+        \`;
+        transactionList.appendChild(li);
+
+        if (t.amount >= 0) income += t.amount;
+        else expense += t.amount;
+      });
+
+      incomeDisplay.textContent = \`₹\${income.toFixed(2)}\`;
+      expenseDisplay.textContent = \`₹\${Math.abs(expense).toFixed(2)}\`;
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+    }
+
+    function exportCSV() {
+      const rows = [['Description', 'Amount']];
+      transactions.forEach(t => rows.push([t.description, t.amount]));
+      const csv = rows.map(r => r.join(',')).join('\\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'transactions.csv';
+      a.click();
+    }
+
+    function login() {
+      const pw = document.getElementById('password').value;
+      if (pw === 'admin') {
+        document.getElementById('auth').classList.add('hidden');
+        document.getElementById('app').classList.remove('hidden');
+        renderTransactions();
+      } else {
+        alert('Wrong password!');
+      }
+    }
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Finance Manager</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      transition: background 0.3s, color 0.3s;
+    }
+    .dark-mode {
+      background: #121212;
+      color: #fff;
+    }
+    .container {
+      max-width: 500px;
+      margin: auto;
+      padding: 1rem;
+      background: white;
+      margin-top: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .dark-mode .container {
+      background: #1e1e1e;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    .summary {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .filter, .auth, .toggle, .export {
+      text-align: center;
+      margin: 1rem 0;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    ul li {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #ccc;
+    }
+    ul li span {
+      flex: 1;
+    }
+    .delete-btn {
+      background: red;
+      color: white;
+      border: none;
+      padding: 0 8px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    input, button, select {
+      padding: 0.5rem;
+      font-size: 1rem;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="auth" id="auth">
+    <h2>Login</h2>
+    <input type="password" id="password" placeholder="Enter Password" />
+    <button onclick="login()">Login</button>
+    <p style="font-size: small;">Hint: password is <b>admin</b></p>
+  </div>
+
+  <div class="container hidden" id="app">
+    <h1>Finance Manager</h1>
+
+    <div class="toggle">
+      <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
+    </div>
+
+    <div class="summary">
+      <div>
+        <h2>Income</h2>
+        <p id="income">₹0.00</p>
+      </div>
+      <div>
+        <h2>Expense</h2>
+        <p id="expense">₹0.00</p>
+      </div>
+    </div>
+
+    <div class="filter">
+      <label for="filter-type">Filter:</label>
+      <select id="filter-type">
+        <option value="all">All</option>
+        <option value="income">Income</option>
+        <option value="expense">Expense</option>
+      </select>
+    </div>
+
+    <ul id="transaction-list"></ul>
+
+    <form id="transaction-form">
+      <input type="text" id="description" placeholder="Description" required />
+      <input type="number" id="amount" placeholder="Amount" required />
+      <button type="submit">Add Transaction</button>
+    </form>
+
+    <div class="export">
+      <button onclick="exportCSV()">Export to CSV</button>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('transaction-form');
+    const descriptionInput = document.getElementById('description');
+    const amountInput = document.getElementById('amount');
+    const transactionList = document.getElementById('transaction-list');
+    const incomeDisplay = document.getElementById('income');
+    const expenseDisplay = document.getElementById('expense');
+    const filterSelect = document.getElementById('filter-type');
+
+    let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const desc = descriptionInput.value;
+      const amount = parseFloat(amountInput.value);
+      if (desc && !isNaN(amount)) {
+        const newTransaction = { id: Date.now(), description: desc, amount };
+        transactions.push(newTransaction);
+        saveAndRender();
+        descriptionInput.value = '';
+        amountInput.value = '';
+      }
+    });
+
+    transactionList.addEventListener('click', function(e) {
+      if (e.target.classList.contains('delete-btn')) {
+        const id = e.target.dataset.id;
+        transactions = transactions.filter(t => t.id != id);
+        saveAndRender();
+      }
+    });
+
+    filterSelect.addEventListener('change', renderTransactions);
+
+    function saveAndRender() {
+      localStorage.setItem('transactions', JSON.stringify(transactions));
+      renderTransactions();
+    }
+
+    function renderTransactions() {
+      transactionList.innerHTML = '';
+      let income = 0;
+      let expense = 0;
+      const filter = filterSelect.value;
+      const filtered = transactions.filter(t =>
+        filter === 'all' ||
+        (filter === 'income' && t.amount >= 0) ||
+        (filter === 'expense' && t.amount < 0)
+      );
+
+      filtered.forEach(t => {
+        const li = document.createElement('li');
+        li.innerHTML = \`
+          <span>\${t.description}</span>
+          <span style="color:\${t.amount < 0 ? 'red' : 'green'}">₹\${t.amount}</span>
+          <button class="delete-btn" data-id="\${t.id}">x</button>
+        \`;
+        transactionList.appendChild(li);
+
+        if (t.amount >= 0) income += t.amount;
+        else expense += t.amount;
+      });
+
+      incomeDisplay.textContent = \`₹\${income.toFixed(2)}\`;
+      expenseDisplay.textContent = \`₹\${Math.abs(expense).toFixed(2)}\`;
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+    }
+
+    function exportCSV() {
+      const rows = [['Description', 'Amount']];
+      transactions.forEach(t => rows.push([t.description, t.amount]));
+      const csv = rows.map(r => r.join(',')).join('\\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'transactions.csv';
+      a.click();
+    }
+
+    function login() {
+      const pw = document.getElementById('password').value;
+      if (pw === 'admin') {
+        document.getElementById('auth').classList.add('hidden');
+        document.getElementById('app').classList.remove('hidden');
+        renderTransactions();
+      } else {
+        alert('Wrong password!');
+      }
+    }
+    
+  </script>
 </body>
 </html>
